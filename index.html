@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- A-Frame を読み込む -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <!-- AR.js を読み込む -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- aframe-extras.min.js を読み込む -->
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <title>上毎WebAR</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .ui {
+            position: absolute;
+            z-index: 100;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            margin: 0;
+            padding: 10px 15px 30px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .ui a {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background-color: #ffffff;
+            line-height: 100%;
+            color: #303030;
+            margin: 10px 3px;
+            border-radius: 50%;
+            position: relative;
+
+        }
+        .ui a i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        .ui a:active {
+            color: #ff0000;
+        }
+
+        #snap {
+            max-width: 100%;
+            height: auto;
+            display: block;;
+            visibility: hidden;
+        }
+        .ui a.disabled {
+            pointer-events: none;
+            color: #cccccc;
+        }
+        #snap.visible {
+            visibility: visible;
+        }
+    </style>
+  </head>
+  <body style="margin: 0; overflow: hidden">
+	  
+    <!-- A-FrameにAR.jsを紐づけ、VRボタン非表示、深度バッファ追加、glTFの表示が暗くなる問題対処 -->
+    <a-scene embedded arjs="debugUIEnabled: false"
+	     sourceType="webcam"
+	     vr-mode-ui="enabled: false;"
+	     renderer="logarithmicDepthBuffer: true; gammaInput: true; gammaOutput: true;"
+	     device-orientation-permission-ui="enabled: false"
+	     >
+	
+    <!-- 3DCGモデルを読み込む -->
+    <a-asset-item id="T-Rex" src="./assets/asset.glb"></a-asset-item>
+    
+    <!-- マーカーの.pattファイルを読み込む -->
+    <a-marker type="pattern" url="./assets/marker.patt">
+    
+    	<!-- 3DCGモデルの呼び出し、スケール、アニメーション設定 -->
+    	<a-entity gltf-model="#T-Rex"
+	    scale = "0.75 0.75 0.75"
+	    animation = "property: rotation; to: 0 360 0; dur: 10000; easing: linear; loop: true"
+	    animation-mixer
+    	></a-entity>
+    </a-marker>
+	    
+    <!-- 3DCGモデルを読み込む -->
+    <a-asset-item id="USA" src="./assets/USA_Burger.glb"></a-asset-item>
+    
+    <!-- マーカーの.pattファイルを読み込む -->
+    <a-marker type="pattern" url="./assets/USA_Burger_marker.patt">
+	      
+	<!-- 3DCGモデルの呼び出し、スケール、アニメーション設定 -->
+        <a-entity gltf-model="#USA"
+	      scale = "4 4 4"
+	      animation-mixer
+        ></a-entity>    
+    </a-marker>
+	    
+    <!-- 3DCGモデルを読み込む -->
+    <a-asset-item id="Uni" src="./assets/uniform_girl.glb"></a-asset-item>
+	    
+    <!-- マーカーの.pattファイルを読み込む -->
+    <a-marker type="pattern" url="./assets/unifrom_girl.patt">
+	      
+	<!-- 3DCGモデルの呼び出し、スケール、アニメーション設定 -->
+        <a-entity gltf-model="#Uni"
+	      scale = "4 4 4"
+	      rotation = "90 0 0"
+	      animation-mixer
+        ></a-entity>
+    </a-marker>
+	    
+    <!-- カメラを追加 -->
+    <a-entity camera></a-entity>
+      
+    </a-scene>
+    <div class="ui">
+    	<img id="snap">
+    	<a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
+    	<a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+    	<a href="#" id="download-photo" download="selfie.png" title="Save Photo" class="disabled" target="_blank"><i class="material-icons">file_download</i></a>
+    </div>
+  </body>
+
+<script>
+    var image = document.querySelector('#snap');
+    var take_photo_btn = document.querySelector('#take-photo');
+    var delete_photo_btn = document.querySelector('#delete-photo');
+    var download_photo_btn = document.querySelector('#download-photo');
+
+    //スナップショットボタン
+    take_photo_btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        var video = document.querySelector('video');
+        var snap = takeSnapshot(video);
+
+        //スナップショット表示.
+        image.setAttribute('src', snap);
+        image.classList.add('visible');
+
+        // 削除ボタンと保存ボタン有効
+        delete_photo_btn.classList.remove("disabled");
+        download_photo_btn.classList.remove("disabled");
+
+        // 保存ボタンにスナップショットを渡す
+        download_photo_btn.href = snap;
+    });
+
+    //削除ボタン
+    delete_photo_btn.addEventListener("click", function(e){
+
+        e.preventDefault();
+
+        // スナップショットを隠す
+        image.setAttribute('src', "");
+        image.classList.remove("visible");
+
+        // 削除ボタンと保存ボタン無効
+        delete_photo_btn.classList.add("disabled");
+        download_photo_btn.classList.add("disabled");
+
+    });
+
+    //スナップショットを撮る
+    function takeSnapshot(video) {
+        var resizedCanvas = document.createElement("canvas");
+        var resizedContext = resizedCanvas.getContext("2d");
+        var width = video.videoWidth;
+        var height = video.videoHeight;
+        var aScene = document.querySelector("a-scene").components.screenshot.getCanvas("perspective");
+
+        if (width && height) {
+            //videoのサイズをキャンバスにセット
+            resizedCanvas.width = width;
+            resizedCanvas.height = height;
+            //キャンバスにvideoをコピー
+            resizedContext.drawImage(video, 0, 0, width, height);
+
+            //カメラの画角でar側の縮小処理を変える
+            if (width > height) {
+                // 横長（PC)
+                resizedContext.drawImage(aScene, 0, 0, width, height);
+            } else {
+                // 縦長（スマホ）
+                var scale = height / width;
+                var scaledWidth = height * scale;
+                var marginLeft = (width - scaledWidth) / 2;
+                resizedContext.drawImage(aScene, marginLeft, 0, scaledWidth, height);
+            }
+            return resizedCanvas.toDataURL('image/png');
+        }
+    }
+
+    //-->
+</script>
+
+</html>
